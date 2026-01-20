@@ -13,3 +13,5 @@ wheels/
 gifs/**
 videos/**
 screenshots/**
+
+!**/.gitkeep
