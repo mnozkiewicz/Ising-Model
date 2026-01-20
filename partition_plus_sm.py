@@ -44,10 +44,11 @@ def metropolis_phase(
 @click.command()
 @click.option("--n", type=int, default=200, help="Grid size (NxN)")
 @click.option("--total_flips", type=int, default=100_000_000, help="Total attempts across ALL processes")
-@click.option("--iterations", type=int, default=100, help="Number of synchronization steps")
+@click.option("--iterations", type=int, default=10, help="Number of synchronization steps")
 @click.option("--kt", type=float, default=2.3, help="Temperature")
-@click.option("--verbose", type=bool, default=True)
-def main(n: int, total_flips: int, iterations: int, kt: float, verbose: bool):
+@click.option("--density", type=float, default=0.5, help="Initial Density of white pixels")
+@click.option("--verbose", type=bool, default=False)
+def main(n: int, total_flips: int, iterations: int, kt: float, density: float, verbose: bool):
     
 
     comm = MPI.COMM_WORLD
@@ -64,7 +65,7 @@ def main(n: int, total_flips: int, iterations: int, kt: float, verbose: bool):
 
     if rank == 0:
         np.random.seed(0)
-        init_data = np.random.choice([1.0, -1.0], size=(n, n))
+        init_data = np.random.choice([1.0, -1.0], size=(n, n), p=[density, 1 - density])
         lattice[:] = init_data[:]
         
     shm_comm.Barrier()
@@ -124,8 +125,9 @@ def main(n: int, total_flips: int, iterations: int, kt: float, verbose: bool):
         if step % 1000 == 0:
             magnetizations.append(avg_mag)
     
+    print(f"{(end_time - start_time):.3f}")
     if rank == 0 and verbose:
-        print(f"Time elapsed: {(end_time - start_time):.3f}")
+
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
         ax1.imshow(lattice, cmap='gray', interpolation='nearest')
         ax1.set_title(f"Final Configuration (T={kt})")

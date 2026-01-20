@@ -34,13 +34,13 @@ def metropolis_phase(
 
 @click.command()
 @click.option("--n", type=int, default=200, help="Grid size (NxN)")
-@click.option("--total_flips", type=int, default=100_000_000, help="Total attempts across ALL processes")
+@click.option("--total_flips", type=int, default=100_000_000, help="Total flip attempts")
 @click.option("--kt", type=float, default=2.3, help="Temperature")
 @click.option("--density", type=float, default=0.5, help="Initial Density of white pixels")
-@click.option("--verbose", type=bool, default=True)
+@click.option("--verbose", type=bool, default=False)
 def main(n: int, total_flips: int, kt: float, density: float, verbose: bool):
     
-    start_time = perf_counter()
+
 
     np.random.seed(0)
     init_data = np.random.choice([1.0, -1.0], size=(n, n), p=[density, 1 - density])
@@ -48,8 +48,8 @@ def main(n: int, total_flips: int, kt: float, density: float, verbose: bool):
     J = 1.0
     beta = 1.0 / kt
     
+    start_time = perf_counter()
     metropolis_phase(n, init_data, J, beta, total_flips)
-
     end_time = perf_counter()
 
     magnetizations = []
@@ -74,7 +74,7 @@ def main(n: int, total_flips: int, kt: float, density: float, verbose: bool):
         if step % 1000 == 0:
             magnetizations.append(avg_mag)
 
-    print(f"Time elapsed: {(end_time - start_time):.4f}")
+    print(f"{(end_time - start_time):.4f}")
         
     if verbose:
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
