@@ -98,7 +98,7 @@ def main(n: int, total_flips: int, kt: float, density: float, verbose: bool):
         ax3.set_ylabel("Count")
         ax3.legend()
 
-        plt.savefig("screenshots/ising_sequential_random.png")
+        plt.savefig("../screenshots/ising_sequential_random.png")
         plt.tight_layout()
         plt.show()
             

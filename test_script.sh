@@ -21,14 +21,14 @@ echo "grid_size,total_flips,nproc,time_sec" > $OUTFILE
 for PARAMS in "${PARAMS_LIST[@]}"; do
     read grid_size total_flips  <<< "$PARAMS"
     
-    DURATION_BASE=$(uv run sequential.py --n $grid_size --total_flips $total_flips | tail -n 1)
+    DURATION_BASE=$(uv run src/sequential.py --n $grid_size --total_flips $total_flips | tail -n 1)
     echo "$grid_size,$total_flips,1,$DURATION_BASE" | tee -a $OUTFILE
 
     for NPROC in "${NPROC_LIST[@]}"; do
         
         echo "Running n=$grid_size, total_flips=$total_flips with $NPROC MPI processes"
 
-        DURATION=$(mpiexec -n $NPROC uv run partition_plus_sm.py \
+        DURATION=$(mpiexec -n $NPROC uv run src/partition_plus_sm.py \
             --n $grid_size --total_flips $total_flips | tail -n 1)
 
         echo "$grid_size,$total_flips,$NPROC,$DURATION" | tee -a $OUTFILE
