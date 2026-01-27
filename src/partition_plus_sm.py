@@ -6,7 +6,7 @@ import click
 from time import perf_counter
 
 
-@numba.jit(nopython=True, nogil=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def metropolis_phase(
         row_start: int, row_end: int,
         n: int,

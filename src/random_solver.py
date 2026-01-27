@@ -5,7 +5,7 @@ import numba
 import click
 from time import perf_counter
 
-@numba.jit(nopython=True, nogil=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def metropolis_phase(
         n: int,
         lattice,
@@ -104,7 +104,6 @@ def main(n: int, total_flips: int, iterations: int, kt: float, density: float, v
         per_node_tasks = task_size // size
         start = rank * per_node_tasks
         end = (rank + 1) * per_node_tasks if rank < n - 1 else task_size
-        print(rank,"/",size, start, end, '               ',task_size, per_node_tasks)
                         
         metropolis_phase(
             n, lattice, J, beta, tasks, start, end
