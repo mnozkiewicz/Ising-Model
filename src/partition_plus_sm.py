@@ -15,11 +15,14 @@ def metropolis_phase(
         beta: float,
         parity: int,
         n_samples: int,
-        seed: int
+        seed: int,
+        verbose: bool = False,
+        iteration: int = 0,
+        kt: float = 2.3
     ):
     
     np.random.seed(seed)
-    for _ in range(n_samples):
+    for idx in range(n_samples):
         i, j = np.random.randint(row_start, row_end), np.random.randint(0, n)
         
         if (i + j) % 2 != parity:
@@ -38,12 +41,15 @@ def metropolis_phase(
             lattice[i, j] *= -1
         elif np.random.random() < np.exp(-dE * beta):
             lattice[i, j] *= -1
-            
-        
 
+        if verbose:
+            real_idx = n_samples * iteration + idx
+            if real_idx % 200 == 0:
+                np.save(f"src/matrix_screenshots/mat_{kt}_{row_start}_{real_idx}.npy", lattice[row_start:row_end])
+            
 @click.command()
 @click.option("--n", type=int, default=200, help="Grid size (NxN)")
-@click.option("--total_flips", type=int, default=100_000_000, help="Total attempts across ALL processes")
+@click.option("--total_flips", type=int, default=1_000_000, help="Total attempts across ALL processes")
 @click.option("--iterations", type=int, default=10, help="Number of synchronization steps")
 @click.option("--kt", type=float, default=2.3, help="Temperature")
 @click.option("--density", type=float, default=0.5, help="Initial Density of white pixels")
@@ -91,13 +97,15 @@ def main(n: int, total_flips: int, iterations: int, kt: float, density: float, v
         
         # PHASE 1: RED (Parity 0)
         metropolis_phase(
-            row_start, row_end, n, lattice, J, beta, 0, samples_per_phase, current_seed
+            row_start, row_end, n, lattice, J, beta, 0, samples_per_phase, current_seed, verbose, 2*i, kt
         )
+
+
         shm_comm.Barrier()
         
         # PHASE 2: BLACK (Parity 1)
         metropolis_phase(
-            row_start, row_end, n, lattice, J, beta, 1, samples_per_phase, current_seed + 1
+            row_start, row_end, n, lattice, J, beta, 1, samples_per_phase, current_seed + 1, verbose, 2*i + 1, kt
         )
         shm_comm.Barrier()
 
@@ -126,32 +134,32 @@ def main(n: int, total_flips: int, iterations: int, kt: float, density: float, v
             magnetizations.append(avg_mag)
     
     print(f"{(end_time - start_time):.3f}")
-    if rank == 0 and verbose:
+    # if rank == 0 and verbose:
 
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
-        ax1.imshow(lattice, cmap='gray', interpolation='nearest')
-        ax1.set_title(f"Final Configuration (T={kt})")
-        ax1.axis('off')
+    #     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+    #     ax1.imshow(lattice, cmap='gray', interpolation='nearest')
+    #     ax1.set_title(f"Final Configuration (T={kt})")
+    #     ax1.axis('off')
 
-        ax2.plot(magnetizations, linewidth=0.5, color='blue')
-        ax2.set_title(f"Magnetization Fluctuations during Measurement")
-        ax2.set_xlabel("Sample Points")
-        ax2.set_ylabel("|Magnetization|")
-        ax2.set_ylim(0, 1)
-        ax2.grid(True, linestyle='--', linewidth=0.5)
+    #     ax2.plot(magnetizations, linewidth=0.5, color='blue')
+    #     ax2.set_title(f"Magnetization Fluctuations during Measurement")
+    #     ax2.set_xlabel("Sample Points")
+    #     ax2.set_ylabel("|Magnetization|")
+    #     ax2.set_ylim(0, 1)
+    #     ax2.grid(True, linestyle='--', linewidth=0.5)
 
 
-        mean_magnetization = np.mean(magnetizations)
-        ax3.hist(magnetizations, bins=30, color='skyblue', edgecolor='black')
-        ax3.axvline(mean_magnetization, color='red', linestyle='dashed', linewidth=2, label=f'Mean: {mean_magnetization:.4f}')
-        ax3.set_title("Histogram of Average Magnetization")
-        ax3.set_xlabel("Average Magnetization")
-        ax3.set_ylabel("Count")
-        ax3.legend()
+    #     mean_magnetization = np.mean(magnetizations)
+    #     ax3.hist(magnetizations, bins=30, color='skyblue', edgecolor='black')
+    #     ax3.axvline(mean_magnetization, color='red', linestyle='dashed', linewidth=2, label=f'Mean: {mean_magnetization:.4f}')
+    #     ax3.set_title("Histogram of Average Magnetization")
+    #     ax3.set_xlabel("Average Magnetization")
+    #     ax3.set_ylabel("Count")
+    #     ax3.legend()
 
-        plt.savefig("../screenshots/ising_sequential_random.png")
-        plt.tight_layout()
-        plt.show()
+    #     plt.savefig("../screenshots/ising_sequential_random.png")
+    #     plt.tight_layout()
+    #     plt.show()
             
     win.Free()
 
